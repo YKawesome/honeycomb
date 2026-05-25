@@ -14,6 +14,7 @@ import {
 import {
     FocusCamViewerMixin,
     LightingViewerMixin,
+    TightShadowViewerMixin,
     TransformControlsViewerMixin,
     ViewCubeViewerMixin
 } from "@gov.nasa.jpl.honeycomb/scene-viewers";
@@ -27,7 +28,7 @@ export class VscodeHoneycombViewer extends
     ViewCubeViewerMixin(
         FocusCamViewerMixin(
             TransformControlsViewerMixin(
-                LightingViewerMixin(Viewer))))
+                TightShadowViewerMixin(Viewer))))
 {
 }
 
@@ -93,7 +94,7 @@ const HoneycombInner: React.FC<HoneycombInnerProps> = ({
     scene,
     stateHistory,
 }) => {
-    const { viewer } = useHoneycomb();
+    const { viewer } = useHoneycomb<VscodeHoneycombViewer>();
 
     useEffect(() => {
         // Apply scene options to viewer

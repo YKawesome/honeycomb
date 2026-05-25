@@ -81,7 +81,7 @@ export function TightShadowViewerMixin<TBase extends Constructor>(base: TBase) {
         }
 
         getLightDirection(): Euler {
-            return (new Euler).setFromQuaternion(this.directionalLight.quaternion);
+            return (new Euler()).setFromQuaternion(this.directionalLight.quaternion);
         }
 
         setLightDirection(direction: Vector3) {

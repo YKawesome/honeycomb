@@ -1,11 +1,12 @@
 import { Vector3 } from 'three';
 import { SceneOptions } from '@gov.nasa.jpl.honeycomb/core';
+import { VscodeHoneycombViewer } from './app';
 
 /**
  * Applies SceneOptions to a viewer instance
  * Based on app/grafana/src/honeycomb/utils.ts:applyOptionsToViewer
  */
-export function applyOptionsToViewer(options: Partial<SceneOptions>, viewer: any) {
+export function applyOptionsToViewer(options: Partial<SceneOptions>, viewer: VscodeHoneycombViewer) {
     // Playback speed
     if (options.playbackSpeed !== undefined) {
         viewer.playbackSpeed = options.playbackSpeed;
@@ -28,7 +29,7 @@ export function applyOptionsToViewer(options: Partial<SceneOptions>, viewer: any
 
     // Lighting
     if (options.lightIntensity !== undefined) {
-        viewer.directionalLight.intensity = options.lightIntensity;
+        viewer.getDirectionalLight().intensity = options.lightIntensity;
     }
 
     if (options.ambientLightIntensity !== undefined) {
@@ -41,7 +42,7 @@ export function applyOptionsToViewer(options: Partial<SceneOptions>, viewer: any
             options.lightDirection[1],
             options.lightDirection[2]
         );
-        viewer.setSunDirection(tempVec3);
+        viewer.setLightDirection(tempVec3);
     }
 
     // Camera settings
