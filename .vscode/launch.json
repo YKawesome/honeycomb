@@ -11,7 +11,11 @@
       "outFiles": [
         "${workspaceFolder}/app/vscode/dist/**/*.js"
       ],
-      "preLaunchTask": "build-vscode-extension"
+      "preLaunchTask": "watch-vscode-extension",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack://honeycomb-vscode/*": "${workspaceFolder}/app/vscode/*"
+      }
     }
   ]
 }

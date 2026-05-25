@@ -9,3 +9,4 @@ export * from './SceneLoader';
 export * from './Timeline';
 export * from './VideoPlayer';
 export * from './ViewerContainer';
+export * from './viewerSetup';

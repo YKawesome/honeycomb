@@ -6,9 +6,9 @@ import path from 'path';
 import baseConfig from "../../.config/webpack.config";
 import { type Configuration, ProvidePlugin } from 'webpack';
 
-const extensionConfig: Configuration = {
+const extensionConfig = (env: any): Configuration => ({
     target: 'node',
-    mode: 'none',
+    mode: env?.production ? 'production' : 'none',
 
     entry: './src/extension.ts',
     output: {
@@ -29,17 +29,23 @@ const extensionConfig: Configuration = {
                 exclude: /node_modules/,
                 use: [
                     {
-                        loader: 'ts-loader'
+                        loader: 'ts-loader',
+                        options: {
+                            compilerOptions: {
+                                sourceMap: true
+                            }
+                        }
                     }
                 ]
             }
         ]
     },
-    devtool: 'nosources-source-map',
+    // Use source-map for development (enables breakpoints), nosources-source-map for production
+    devtool: env?.production ? 'nosources-source-map' : 'source-map',
     infrastructureLogging: {
         level: "log", // enables logging required for problem matchers
     },
-};
+});
 
 const webviewConfig = (env: any): Configuration => {
     const base = baseConfig(env);
@@ -55,10 +61,22 @@ const webviewConfig = (env: any): Configuration => {
         resolve: {
             ...base.resolve,
             extensions: ['.ts', '.tsx', '.js', '.jsx'],
+            fallback: {
+                ...(base.resolve?.fallback || {}),
+                'path': require.resolve('path-browserify'),
+                'process': require.resolve('process/browser'),
+                'process/browser': require.resolve('process/browser'),
+            },
+            alias: {
+                ...(base.resolve?.alias || {}),
+                'path': require.resolve('path-browserify'),
+                'process': require.resolve('process/browser'),
+            },
         },
         plugins: [
             new ProvidePlugin({
                 React: 'react',
+                process: 'process/browser',
             }),
         ],
         module: {
@@ -92,7 +110,7 @@ const webviewConfig = (env: any): Configuration => {
     } as Configuration;
 };
 
-module.exports = [
-    extensionConfig,
-    webviewConfig,
+module.exports = (env: any) => [
+    extensionConfig(env),
+    webviewConfig(env),
 ];

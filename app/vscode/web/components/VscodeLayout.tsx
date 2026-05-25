@@ -1,25 +1,20 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { HoneycombPanel } from '../app';
 import { SceneHierarchy } from './SceneHierarchy';
 import { SettingsPanel } from './SettingsPanel';
-import { VscodeHoneycombOptions } from '../../common/rsf';
+import { RSF } from '../../common/rsf';
 import { SceneObject } from '@gov.nasa.jpl.honeycomb/core';
 import { ensureSceneObjectIds } from '../lib/sceneUtils';
-import { transformRsfToSceneObjects } from '../lib/rsfToSceneObject';
 
 interface VscodeLayoutProps {
-    rsf: VscodeHoneycombOptions;
-    onUpdate: (rsf: VscodeHoneycombOptions) => void;
+    rsf: RSF;
+    onUpdate: (rsf: RSF) => void;
 }
 
 export function VscodeLayout({ rsf, onUpdate }: VscodeLayoutProps) {
     const [selectedObjectIndex, setSelectedObjectIndex] = useState<number | null>(null);
-
-    // Transform RSF scene to SceneObject format for HoneycombPanel
-    const transformedScene = useMemo(() => {
-        return transformRsfToSceneObjects(rsf.scene);
-    }, [rsf.scene]);
+    const scene = rsf.scene;
 
     const handleSceneChange = useCallback((updater: (scene: SceneObject[]) => SceneObject[]) => {
         const newScene = updater(rsf.scene);
@@ -91,7 +86,11 @@ export function VscodeLayout({ rsf, onUpdate }: VscodeLayoutProps) {
                 {/* Right - 3D Viewer */}
                 <Panel defaultSize={80} minSize={60} className="bg-black">
                     <div className="w-full h-full">
-                        <HoneycombPanel scene={transformedScene} options={rsf.options} />
+                        <HoneycombPanel
+                            scene={scene}
+                            options={rsf.options}
+                            stateHistory={rsf.stateHistory}
+                        />
                     </div>
                 </Panel>
             </PanelGroup>

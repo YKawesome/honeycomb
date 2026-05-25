@@ -6,14 +6,6 @@ import { SceneOptions } from '@gov.nasa.jpl.honeycomb/core';
  * Based on app/grafana/src/honeycomb/utils.ts:applyOptionsToViewer
  */
 export function applyOptionsToViewer(options: Partial<SceneOptions>, viewer: any) {
-    console.log('[applyOptionsToViewer] Applying options:', options);
-    console.log('[applyOptionsToViewer] Viewer before:', {
-        directionalLightIntensity: viewer.directionalLight?.intensity,
-        ambientLightIntensity: viewer.ambientLight?.intensity,
-        gridVisibility: viewer.gridVisibility,
-        up: viewer.world?.getUpDirection?.(),
-    });
-
     // Playback speed
     if (options.playbackSpeed !== undefined) {
         viewer.playbackSpeed = options.playbackSpeed;
@@ -26,7 +18,6 @@ export function applyOptionsToViewer(options: Partial<SceneOptions>, viewer: any
 
     // Up direction (orientation) - THIS IS KEY FOR CORRECT ORIENTATION
     if (options.up !== undefined) {
-        console.log('[applyOptionsToViewer] Setting up direction to:', options.up);
         viewer.world.setUpDirection(options.up);
     }
 
@@ -37,12 +28,10 @@ export function applyOptionsToViewer(options: Partial<SceneOptions>, viewer: any
 
     // Lighting
     if (options.lightIntensity !== undefined) {
-        console.log('[applyOptionsToViewer] Setting directional light intensity to:', options.lightIntensity);
         viewer.directionalLight.intensity = options.lightIntensity;
     }
 
     if (options.ambientLightIntensity !== undefined) {
-        console.log('[applyOptionsToViewer] Setting ambient light intensity to:', options.ambientLightIntensity);
         viewer.ambientLight.intensity = options.ambientLightIntensity;
     }
 
@@ -52,7 +41,6 @@ export function applyOptionsToViewer(options: Partial<SceneOptions>, viewer: any
             options.lightDirection[1],
             options.lightDirection[2]
         );
-        console.log('[applyOptionsToViewer] Setting sun direction to:', tempVec3);
         viewer.setSunDirection(tempVec3);
     }
 

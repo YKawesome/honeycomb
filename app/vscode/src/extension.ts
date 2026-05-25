@@ -95,6 +95,34 @@ class HoneycombRsfProvider implements vscode.CustomTextEditorProvider {
         // Get the RSF file content
         const rsfContent = document.getText();
 
+        // Get root paths and resolve them to absolute paths with webview URIs
+        const configuredRootPaths = getRootPaths();
+        const resolvedRootPaths = configuredRootPaths.map(rp => {
+            let basePath = rp.path;
+
+            // Handle workspace-relative paths
+            if (basePath.startsWith('${workspaceFolder}')) {
+                const workspaceFolders = vscode.workspace.workspaceFolders;
+                if (workspaceFolders && workspaceFolders.length > 0) {
+                    basePath = basePath.replace('${workspaceFolder}', workspaceFolders[0].uri.fsPath);
+                }
+            }
+
+            // Convert relative paths to absolute
+            if (!path.isAbsolute(basePath)) {
+                const workspaceFolders = vscode.workspace.workspaceFolders;
+                if (workspaceFolders && workspaceFolders.length > 0) {
+                    basePath = path.join(workspaceFolders[0].uri.fsPath, basePath);
+                }
+            }
+
+            return {
+                protocol: rp.name,
+                basePath: basePath,
+                baseWebviewUri: webviewPanel.webview.asWebviewUri(vscode.Uri.file(basePath)).toString()
+            };
+        });
+
         webviewPanel.webview.html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,6 +132,7 @@ class HoneycombRsfProvider implements vscode.CustomTextEditorProvider {
     <script>
         window.vscodeExtensionPath = "${webviewPanel.webview.asWebviewUri(this.extensionPath)}";
         window.rsfContent = ${JSON.stringify(rsfContent)};
+        window.vscodeRootPaths = ${JSON.stringify(resolvedRootPaths)};
     </script>
 </head>
 <body style="height: 100vh; width: 100vw; padding: 0;">

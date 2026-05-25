@@ -8,7 +8,7 @@ declare const acquireVsCodeApi: () => {
     setState: (state: any) => void;
 };
 
-const vscode = acquireVsCodeApi();
+export const vscode = acquireVsCodeApi();
 
 interface MessageHandler {
     resolve: (value: any) => void;
@@ -101,7 +101,49 @@ export function isProtocolUri(uri: string): boolean {
     const protocol = protocolMatch[1].toLowerCase();
 
     // Exclude standard web protocols and vscode-resource URLs
-    const standardProtocols = ['http', 'https', 'file', 'data', 'blob', 'ws', 'wss', 'ftp', 'ftps'];
+    const standardProtocols = ['http', 'https', 'file', 'data', 'blob', 'ws', 'wss', 'ftp', 'ftps', 'vscode-webview-resource'];
 
     return !standardProtocols.includes(protocol);
+}
+
+interface RootPathInfo {
+    protocol: string;
+    basePath: string;
+    baseWebviewUri: string;
+}
+
+/**
+ * Synchronously resolves a protocol URI to a webview URI using root paths from extension
+ */
+export function resolveProtocolUriSync(uri: string): string {
+    if (!isProtocolUri(uri)) {
+        return uri;
+    }
+
+    // Get root paths from global variable set by extension
+    const rootPaths = (window as any).vscodeRootPaths as RootPathInfo[] | undefined;
+    if (!rootPaths) {
+        console.error('[resolveProtocolUriSync] vscodeRootPaths not available');
+        return uri;
+    }
+
+    // Parse the protocol URI
+    const match = uri.match(/^(\w+):\/\/(.+)$/);
+    if (!match) {
+        return uri;
+    }
+
+    const [, protocol, relativePath] = match;
+
+    // Find matching root path
+    const rootPath = rootPaths.find(rp => rp.protocol === protocol);
+    if (!rootPath) {
+        console.warn('[resolveProtocolUriSync] No root path configured for protocol:', protocol);
+        return uri;
+    }
+
+    // Construct webview URI by joining base webview URI with relative path
+    // The baseWebviewUri already points to the directory, so we just need to append the relative path
+    const resolved = `${rootPath.baseWebviewUri}/${relativePath}`;
+    return resolved;
 }

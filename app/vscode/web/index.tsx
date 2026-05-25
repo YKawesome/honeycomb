@@ -1,7 +1,9 @@
+import './polyfills';
 import React, { useEffect, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { VscodeHoneycombOptions } from '../common/rsf';
-import { resolveProtocolUri, isProtocolUri } from './vscodeApi';
+import { RSF } from '../common/rsf';
+import { detectRSFVersion, migrateToRSF2 } from '../common/migration';
+import { vscode, resolveProtocolUri, isProtocolUri } from './vscodeApi';
 import { VscodeLayout } from './components/VscodeLayout';
 import { ensureSceneObjectIds } from './lib/sceneUtils';
 import './globals.css';
@@ -24,38 +26,75 @@ window.fetch = async (input, init) => {
 }
 
 function VscodeHoneycomb() {
-    const [rsf, setRsf] = useState<VscodeHoneycombOptions>();
+    const [rsf, setRsf] = useState<RSF>();
     const [error, setError] = useState<string>();
+    const [migrationPrompt, setMigrationPrompt] = useState<{
+        version: string;
+        originalRsf: any;
+    } | null>(null);
 
-    // Define handleUpdate BEFORE any conditional returns (Rules of Hooks)
-    const handleUpdate = useCallback((updatedRsf: VscodeHoneycombOptions) => {
-        console.log('[VscodeHoneycomb] RSF updated:', updatedRsf);
+    const handleUpdate = useCallback((updatedRsf: RSF) => {
         setRsf(updatedRsf);
 
         // Send update message to extension to save the file
-        window.postMessage({
+        vscode.postMessage({
             type: 'updateRsf',
             content: JSON.stringify(updatedRsf, null, 2)
-        }, '*');
+        });
+    }, []);
+
+    const handleMigrate = useCallback(() => {
+        if (!migrationPrompt) return;
+
+        try {
+            const migrated = migrateToRSF2(migrationPrompt.originalRsf);
+            setRsf(migrated);
+            setMigrationPrompt(null);
+
+            // Save migrated file
+            vscode.postMessage({
+                type: 'updateRsf',
+                content: JSON.stringify(migrated, null, 2)
+            });
+        } catch (err) {
+            setError(`Migration failed: ${err}`);
+            setMigrationPrompt(null);
+        }
+    }, [migrationPrompt]);
+
+    const handleCancelMigration = useCallback(() => {
+        setMigrationPrompt(null);
+        setError('Cannot load RSF 1.0 files. Please migrate to RSF 2.0 format.');
     }, []);
 
     useEffect(() => {
-        console.log('[VscodeHoneycomb] Initializing...');
-
         // Load initial RSF content from global variable
         const rsfContent = (window as any).rsfContent;
-        console.log('[VscodeHoneycomb] RSF content from window:', rsfContent);
 
         if (rsfContent) {
             try {
                 const parsed = JSON.parse(rsfContent);
-                console.log('[VscodeHoneycomb] Parsed RSF:', parsed);
-                // Ensure all scene objects have IDs
-                const rsfWithIds = {
-                    ...parsed,
-                    scene: ensureSceneObjectIds(parsed.scene || [])
-                };
-                setRsf(rsfWithIds);
+
+                // Detect version and prompt for migration if needed
+                const version = detectRSFVersion(parsed);
+                console.log('[VscodeHoneycomb] Detected RSF version:', version);
+
+                if (version === "1.0") {
+                    // Prompt user to migrate
+                    setMigrationPrompt({
+                        version,
+                        originalRsf: parsed
+                    });
+                } else if (version === "2.0") {
+                    // RSF 2.0 - use directly
+                    const rsfWithIds = {
+                        ...parsed,
+                        scene: ensureSceneObjectIds(parsed.scene || [])
+                    };
+                    setRsf(rsfWithIds as RSF);
+                } else {
+                    setError(`Unknown RSF format version. Please use RSF 2.0 format.`);
+                }
             } catch (error) {
                 const errorMsg = `Failed to parse RSF content: ${error}`;
                 console.error('[VscodeHoneycomb]', errorMsg);
@@ -63,8 +102,9 @@ function VscodeHoneycomb() {
             }
         } else {
             console.warn('[VscodeHoneycomb] No RSF content found in window');
-            // Set empty RSF to allow viewer to load
+            // Set empty RSF 2.0 to allow viewer to load
             setRsf({
+                version: "2.0",
                 options: {
                     playbackSpeed: 1,
                     gridVisibility: true,
@@ -81,19 +121,29 @@ function VscodeHoneycomb() {
         // Listen for RSF updates from the extension
         const messageHandler = (event: MessageEvent) => {
             const message = event.data;
-            console.log('[VscodeHoneycomb] Message received:', message);
 
             if (message.type === 'updateRsf') {
                 try {
                     const parsed = JSON.parse(message.content);
-                    console.log('[VscodeHoneycomb] Updated RSF:', parsed);
-                    // Ensure all scene objects have IDs
-                    const rsfWithIds = {
-                        ...parsed,
-                        scene: ensureSceneObjectIds(parsed.scene || [])
-                    };
-                    setRsf(rsfWithIds);
-                    setError(undefined);
+
+                    // Detect version
+                    const version = detectRSFVersion(parsed);
+
+                    if (version === "1.0") {
+                        setMigrationPrompt({
+                            version,
+                            originalRsf: parsed
+                        });
+                    } else if (version === "2.0") {
+                        const rsfWithIds = {
+                            ...parsed,
+                            scene: ensureSceneObjectIds(parsed.scene || [])
+                        };
+                        setRsf(rsfWithIds as RSF);
+                        setError(undefined);
+                    } else {
+                        setError(`Unknown RSF format version. Please use RSF 2.0 format.`);
+                    }
                 } catch (error) {
                     const errorMsg = `Failed to parse updated RSF content: ${error}`;
                     console.error('[VscodeHoneycomb]', errorMsg);
@@ -105,6 +155,57 @@ function VscodeHoneycomb() {
         window.addEventListener('message', messageHandler);
         return () => window.removeEventListener('message', messageHandler);
     }, []);
+
+    // Show migration prompt if needed
+    if (migrationPrompt) {
+        return (
+            <div style={{ padding: '40px', color: 'white', backgroundColor: '#1e1e1e', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <div style={{ maxWidth: '600px', textAlign: 'center' }}>
+                    <h2 style={{ marginBottom: '20px' }}>RSF Format Migration Required</h2>
+                    <p style={{ marginBottom: '10px', lineHeight: '1.5' }}>
+                        This file is using RSF {migrationPrompt.version} format.
+                        This viewer supports RSF 2.0+ which requires a migration.
+                    </p>
+                    <p style={{ marginBottom: '30px', lineHeight: '1.5' }}>
+                        Would you like to automatically migrate this file to RSF 2.0?
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <button
+                            onClick={handleMigrate}
+                            style={{
+                                padding: '10px 20px',
+                                backgroundColor: '#0e639c',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }}
+                        >
+                            Migrate to RSF 2.0
+                        </button>
+                        <button
+                            onClick={handleCancelMigration}
+                            style={{
+                                padding: '10px 20px',
+                                backgroundColor: '#444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                    <p style={{ marginTop: '20px', fontSize: '12px', color: '#888' }}>
+                        See <a href="https://github.com/nasa-jpl/honeycomb/blob/main/MIGRATION-GUIDE.md" style={{ color: '#0e639c' }}>Migration Guide</a> for details
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     if (error) {
         return (

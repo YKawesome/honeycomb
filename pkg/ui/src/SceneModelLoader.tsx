@@ -43,7 +43,6 @@ export const SceneModelLoader: React.FC<SceneEntityLoaderProps<ModelSceneObject>
                     manager
                 );
 
-
                 let newObj3d;
                 if (Array.isArray(loaderResult)) {
                     const group = new Group();
@@ -58,6 +57,12 @@ export const SceneModelLoader: React.FC<SceneEntityLoaderProps<ModelSceneObject>
                 setObject(newObj3d);
                 setError(null);
             } catch (err) {
+                console.error('[SceneModelLoader] Failed to load model:', {
+                    id: obj.id,
+                    path: obj.model.path,
+                    error: err,
+                });
+                console.error(err);
                 setObject(null);
                 setError(`${err}`);
             }

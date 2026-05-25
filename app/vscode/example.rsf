@@ -1,4 +1,7 @@
 {
+  "_comment": "RSF 2.0 Example File - Honeycomb Scene Format",
+  "_usage": "To add models: 1) Copy your .obj, .fbx, .urdf, or .gltf files. 2) Update the 'path' field below with the relative or absolute path. 3) Configure protocol URIs in VSCode settings for package:// or cadre:// schemes.",
+  "version": "2.0",
   "options": {
     "playbackSpeed": 1,
     "gridVisibility": true,
@@ -6,7 +9,7 @@
     "viewCube": true,
     "lightDirection": [1, 1, -1],
     "lightIntensity": 1,
-    "ambientLightIntensity": 1,
+    "ambientLightIntensity": 0.5,
     "camera": {
       "near": 0.01,
       "far": 10000
@@ -14,13 +17,47 @@
   },
   "scene": [
     {
-      "id": "example-model-1",
-      "type": "model",
-      "name": "ExampleModel",
-      "position": [0, 0, 0],
-      "orientation": [0, 0, 0, 1],
-      "model": {
-        "path": "cadre://path/to/model.obj"
+      "id": "world",
+      "type": "frame",
+      "name": "World Frame",
+      "description": "Root coordinate frame",
+      "parent": null,
+      "position": {
+        "x": { "type": "constant", "interpolate": false, "value": 0 },
+        "y": { "type": "constant", "interpolate": false, "value": 0 },
+        "z": { "type": "constant", "interpolate": false, "value": 0 }
+      },
+      "orientation": {
+        "type": "jpl",
+        "x": { "type": "constant", "interpolate": false, "value": 0 },
+        "y": { "type": "constant", "interpolate": false, "value": 0 },
+        "z": { "type": "constant", "interpolate": false, "value": 0 },
+        "w": { "type": "constant", "interpolate": false, "value": 1 }
+      }
+    },
+    {
+      "id": "robot-frame",
+      "type": "frame",
+      "name": "Robot Frame",
+      "description": "Example frame showing parent-child relationship",
+      "parent": "world",
+      "position": {
+        "x": { "type": "constant", "interpolate": false, "value": 1 },
+        "y": { "type": "constant", "interpolate": false, "value": 0 },
+        "z": { "type": "constant", "interpolate": false, "value": 0 }
+      },
+      "orientation": {
+        "type": "jpl",
+        "x": { "type": "constant", "interpolate": false, "value": 0 },
+        "y": { "type": "constant", "interpolate": false, "value": 0 },
+        "z": { "type": "constant", "interpolate": false, "value": 0 },
+        "w": { "type": "constant", "interpolate": false, "value": 1 }
+      },
+      "label": {
+        "text": "Robot",
+        "x": 0,
+        "y": 0,
+        "z": 0.5
       }
     }
   ]

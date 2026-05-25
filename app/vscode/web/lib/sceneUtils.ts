@@ -1,10 +1,52 @@
-import { SceneObject } from '@gov.nasa.jpl.honeycomb/core';
+import {
+    SceneObject,
+    Position,
+    Orientation,
+    ChannelType,
+    OrientationConvention,
+    KinematicChannel,
+} from '@gov.nasa.jpl.honeycomb/core';
 
 /**
  * Generates a unique ID for scene objects
  */
 export function generateSceneObjectId(): string {
     return `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Create a constant kinematic channel
+ */
+function createConstantChannel(value: number): KinematicChannel {
+    return {
+        type: ChannelType.constant,
+        interpolate: false,
+        value,
+    };
+}
+
+/**
+ * Create default position channels (origin)
+ */
+function createDefaultPosition(): Position {
+    return {
+        x: createConstantChannel(0),
+        y: createConstantChannel(0),
+        z: createConstantChannel(0),
+    };
+}
+
+/**
+ * Create default orientation channels (identity quaternion: w=1)
+ */
+function createDefaultOrientation(): Orientation {
+    return {
+        type: OrientationConvention.jpl, // XYZW
+        x: createConstantChannel(0),
+        y: createConstantChannel(0),
+        z: createConstantChannel(0),
+        w: createConstantChannel(1), // Identity quaternion
+    };
 }
 
 /**
@@ -23,14 +65,14 @@ export function ensureSceneObjectIds(scene: SceneObject[]): SceneObject[] {
 }
 
 /**
- * Creates a default scene object with all required fields
+ * Creates a default scene object with all required fields (RSF 2.0 format)
  */
 export function createDefaultSceneObject(type: 'model' | 'frame' | 'annotation'): Partial<SceneObject> {
     const baseObject = {
         id: generateSceneObjectId(),
         name: 'Unnamed Object',
-        position: [0, 0, 0] as [number, number, number],
-        orientation: [0, 0, 0, 1] as [number, number, number, number],
+        position: createDefaultPosition(),
+        orientation: createDefaultOrientation(),
         parent: null,
     };
 
