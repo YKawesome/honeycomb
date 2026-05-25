@@ -101,7 +101,7 @@ function TreeNodeComponent({
         <>
             <div
                 className={cn(
-                    "flex items-center gap-1 py-1 px-1.5 hover:bg-accent cursor-pointer group",
+                    "flex items-center gap-1 py-1 px-1.5 hover:bg-accent cursor-pointer group relative",
                     selected && "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
                 style={{ paddingLeft: `${depth * 12 + 6}px` }}
@@ -125,10 +125,10 @@ function TreeNodeComponent({
                 <span className="flex-1 truncate text-xs">
                     {node.object.name || 'Unnamed'}
                 </span>
-                <span className="text-[10px] text-muted-foreground mr-1">
+                <span className="text-[10px] text-muted-foreground">
                     {node.object.type}
                 </span>
-                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded">
                     <Button
                         variant="ghost"
                         size="icon"

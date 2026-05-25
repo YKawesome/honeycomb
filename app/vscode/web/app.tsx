@@ -9,11 +9,11 @@ import {
     VideoPlayerBarProps,
     SceneLoader,
     initializeViewer,
+    PlayerBarHoverContext,
 } from '@gov.nasa.jpl.honeycomb/ui';
 
 import {
     FocusCamViewerMixin,
-    LightingViewerMixin,
     TightShadowViewerMixin,
     TransformControlsViewerMixin,
     ViewCubeViewerMixin
@@ -23,6 +23,9 @@ import { resolveProtocolUriSync, isProtocolUri } from './vscodeApi';
 import { applyOptionsToViewer } from './applyOptions';
 import { VscodeKinematicsAnimator } from './VscodeKinematicsAnimator';
 import { StateSnapshot } from '../common/rsf';
+import { Button } from './components/ui/button';
+import { Slider } from './components/ui/slider';
+import { Play, Pause, Square, Circle } from 'lucide-react';
 
 export class VscodeHoneycombViewer extends
     ViewCubeViewerMixin(
@@ -84,8 +87,123 @@ interface HoneycombInnerProps extends HoneycombProps {
     containerRef: Element;
 }
 
-const VideoPlayerBar: React.FC<VideoPlayerBarProps> = () => {
+const EmptyPlayerBar: React.FC<VideoPlayerBarProps> = () => {
     return null;
+}
+
+const VideoPlayerBar: React.FC<VideoPlayerBarProps> = ({
+    startTime,
+    currTime,
+    endTime,
+    setTime,
+
+    isPlaying,
+    isLive,
+    displayLive,
+
+    left,
+    right,
+    top,
+    bottom,
+
+    onClickPlay,
+    onClickStop,
+    onClickLive,
+
+    disabled,
+}) => {
+    const [hovering, setHovering] = React.useState(false);
+
+    // Format time display
+    const formatTime = (timestamp: number) => {
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    };
+
+    const currentTimeStr = formatTime(currTime);
+    const endTimeStr = formatTime(endTime);
+
+    return (
+        <div
+            className="flex flex-col gap-0"
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => setHovering(false)}
+        >
+            <PlayerBarHoverContext.Provider value={hovering}>
+                {top}
+
+                {/* Slider */}
+                <div className="px-2 py-1">
+                    <Slider
+                        min={startTime}
+                        max={endTime}
+                        value={[currTime]}
+                        onValueChange={(values: number[]) => setTime(values[0])}
+                        disabled={disabled}
+                        className="cursor-pointer"
+                    />
+                </div>
+
+                {bottom}
+            </PlayerBarHoverContext.Provider>
+
+            {/* Control bar */}
+            <div className="flex flex-row justify-between items-center gap-2 px-2 py-1">
+                <div className="flex flex-row items-center gap-3">
+                    <div className="flex flex-row items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={onClickPlay}
+                            disabled={disabled}
+                            aria-label={isPlaying ? "Pause" : "Play"}
+                        >
+                            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={onClickStop}
+                            disabled={disabled}
+                            aria-label="Stop"
+                        >
+                            <Square className="h-4 w-4" />
+                        </Button>
+                        <span className="text-xs font-mono">
+                            <span className="font-bold">{currentTimeStr}</span>
+                            <span className="mx-1">:</span>
+                            {endTimeStr}
+                        </span>
+                    </div>
+                    {displayLive && (
+                        <Button
+                            variant={isLive ? "secondary" : "outline"}
+                            size="sm"
+                            className="h-7"
+                            onClick={onClickLive}
+                            disabled={isLive}
+                        >
+                            <Circle className="h-2 w-2 fill-current mr-1" />
+                            Live
+                        </Button>
+                    )}
+                    <div className="flex flex-row items-center gap-1">
+                        {left}
+                    </div>
+                </div>
+                <div className="flex flex-row items-center gap-1">
+                    {right}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 const HoneycombInner: React.FC<HoneycombInnerProps> = ({
@@ -122,11 +240,13 @@ const HoneycombInner: React.FC<HoneycombInnerProps> = ({
         }
     }, [viewer, stateHistory]);
 
+    const hasStateHistory = stateHistory && stateHistory.length > 0;
+
     return (
         <VideoPlayer
             viewer={viewer}
             container={containerRef}
-            PlayerBar={VideoPlayerBar}
+            PlayerBar={hasStateHistory ? VideoPlayerBar : EmptyPlayerBar}
         />
     );
 };
