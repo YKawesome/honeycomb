@@ -1,0 +1,27 @@
+{
+  "options": {
+    "playbackSpeed": 1,
+    "gridVisibility": true,
+    "up": "+Z",
+    "viewCube": true,
+    "lightDirection": [1, 1, -1],
+    "lightIntensity": 1,
+    "ambientLightIntensity": 1,
+    "camera": {
+      "near": 0.01,
+      "far": 10000
+    }
+  },
+  "scene": [
+    {
+      "id": "example-model-1",
+      "type": "model",
+      "name": "ExampleModel",
+      "position": [0, 0, 0],
+      "orientation": [0, 0, 0, 1],
+      "model": {
+        "path": "cadre://path/to/model.obj"
+      }
+    }
+  ]
+}

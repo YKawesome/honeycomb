@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Honeycomb Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/app/vscode"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/app/vscode/dist/**/*.js"
+      ],
+      "preLaunchTask": "build-vscode-extension"
+    }
+  ]
+}

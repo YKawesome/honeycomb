@@ -1,0 +1,51 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-vscode-extension",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["compile"],
+      "options": {
+        "cwd": "${workspaceFolder}/app/vscode"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "watch-vscode-extension",
+      "type": "shell",
+      "command": "yarn",
+      "args": ["watch"],
+      "options": {
+        "cwd": "${workspaceFolder}/app/vscode"
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": {
+        "owner": "webpack",
+        "pattern": {
+          "regexp": "^(.*)$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*webpack.*Compiler starting.*$",
+          "endsPattern": "^.*webpack.*compiled.*$"
+        }
+      }
+    }
+  ]
+}

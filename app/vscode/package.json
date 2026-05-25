@@ -1,0 +1,109 @@
+{
+  "name": "honeycomb-vscode",
+  "displayName": "Honeycomb",
+  "description": "VSCode Plugin for loading 3D scenes using the JPL Honeycomb Framework",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "honeycomb.rsf",
+        "displayName": "Honeycomb",
+        "selector": [
+          {
+            "filenamePattern": "*.rsf"
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Honeycomb",
+      "properties": {
+        "honeycomb.rootPaths": {
+          "type": "array",
+          "default": [],
+          "description": "Root paths for resolving protocol URIs (e.g., package://)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Protocol name (e.g., 'package')"
+              },
+              "path": {
+                "type": "string",
+                "description": "Absolute or workspace-relative path"
+              }
+            },
+            "required": [
+              "name",
+              "path"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "yarn run compile-tests && yarn run compile && yarn run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.1",
+    "@types/vscode": "^1.97.0",
+    "@typescript-eslint/eslint-plugin": "^8.44.1",
+    "@typescript-eslint/parser": "^8.44.1",
+    "css-loader": "^7.1.2",
+    "eslint": "^9.36.0",
+    "postcss-loader": "^8.2.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^3.4.0",
+    "three": "^0.169.0",
+    "three-mesh-bvh": "^0.9.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "5.5.4",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-livereload-plugin": "^3.0.2"
+  },
+  "dependencies": {
+    "@gov.nasa.jpl.honeycomb/core": "^0.0.0",
+    "@gov.nasa.jpl.honeycomb/extensions": "^0.0.0",
+    "@gov.nasa.jpl.honeycomb/scene-viewers": "^0.0.0",
+    "@gov.nasa.jpl.honeycomb/ui": "^0.0.0",
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "autoprefixer": "^10.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.16.0",
+    "postcss": "^8.5.15",
+    "react-resizable-panels": "^2.0.0",
+    "tailwind-merge": "^3.6.0"
+  },
+  "private": true
+}
