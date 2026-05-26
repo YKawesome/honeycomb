@@ -3,9 +3,15 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { HoneycombPanel } from '../app';
 import { SceneHierarchy } from './SceneHierarchy';
 import { SettingsPanel } from './SettingsPanel';
+import { PlanProvider } from './plans/PlanContext';
+import { PlanSelector } from './plans/PlanSelector';
+import { ActivityList } from './plans/ActivityList';
+import { ActivitySettings } from './plans/ActivitySettings';
 import { RSF } from '../../common/rsf';
 import { SceneObject } from '@gov.nasa.jpl.honeycomb/core';
 import { ensureSceneObjectIds } from '../lib/sceneUtils';
+import { Button } from './ui/button';
+import { Box, ListTodo } from 'lucide-react';
 
 interface VscodeLayoutProps {
     rsf: RSF;
@@ -14,6 +20,7 @@ interface VscodeLayoutProps {
 
 export function VscodeLayout({ rsf, onUpdate }: VscodeLayoutProps) {
     const [selectedObjectIndex, setSelectedObjectIndex] = useState<number | null>(null);
+    const [activeTab, setActiveTab] = useState<'scene' | 'plans'>('scene');
     const scene = rsf.scene;
 
     const handleSceneChange = useCallback((updater: (scene: SceneObject[]) => SceneObject[]) => {
@@ -23,6 +30,13 @@ export function VscodeLayout({ rsf, onUpdate }: VscodeLayoutProps) {
         onUpdate({
             ...rsf,
             scene: sceneWithIds,
+        });
+    }, [rsf, onUpdate]);
+
+    const handlePlansUpdate = useCallback((plans: typeof rsf.plans) => {
+        onUpdate({
+            ...rsf,
+            plans,
         });
     }, [rsf, onUpdate]);
 
@@ -53,47 +67,100 @@ export function VscodeLayout({ rsf, onUpdate }: VscodeLayoutProps) {
     }, [rsf, onUpdate]);
 
     return (
-        <div className="h-screen w-screen flex bg-background text-foreground">
-            <PanelGroup direction="horizontal">
-                {/* Left Sidebar - Scene Hierarchy and Settings */}
-                <Panel defaultSize={20} minSize={15} maxSize={35}>
-                    <PanelGroup direction="vertical">
-                        {/* Scene Hierarchy */}
-                        <Panel defaultSize={60} minSize={30}>
-                            <SceneHierarchy
-                                scene={rsf.scene}
-                                selectedIndex={selectedObjectIndex}
-                                onSelect={setSelectedObjectIndex}
-                                onToggleVisibility={handleToggleVisibility}
-                                onDelete={handleDelete}
-                            />
-                        </Panel>
+        <PlanProvider initialPlans={rsf.plans} onUpdate={handlePlansUpdate}>
+            <div className="h-screen w-screen flex bg-background text-foreground">
+                <PanelGroup direction="horizontal">
+                    {/* Left Sidebar - Scene/Plans and Settings */}
+                    <Panel defaultSize={20} minSize={15} maxSize={35}>
+                        <PanelGroup direction="vertical">
+                            {/* Top: Scene or Plans */}
+                            <Panel defaultSize={60} minSize={30}>
+                                <div className="flex flex-col h-full">
+                                    {/* Tab buttons */}
+                                    <div className="flex border-b">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={`flex-1 rounded-none border-b-2 ${
+                                                activeTab === 'scene'
+                                                    ? 'border-primary bg-muted'
+                                                    : 'border-transparent'
+                                            }`}
+                                            onClick={() => setActiveTab('scene')}
+                                        >
+                                            <Box className="h-4 w-4 mr-1" />
+                                            Scene
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={`flex-1 rounded-none border-b-2 ${
+                                                activeTab === 'plans'
+                                                    ? 'border-primary bg-muted'
+                                                    : 'border-transparent'
+                                            }`}
+                                            onClick={() => setActiveTab('plans')}
+                                        >
+                                            <ListTodo className="h-4 w-4 mr-1" />
+                                            Plans
+                                        </Button>
+                                    </div>
 
-                        <PanelResizeHandle className="h-1 bg-border hover:bg-primary transition-colors" />
+                                    {/* Content area */}
+                                    <div className="flex-1 overflow-hidden">
+                                        {activeTab === 'scene' ? (
+                                            <SceneHierarchy
+                                                scene={rsf.scene}
+                                                selectedIndex={selectedObjectIndex}
+                                                onSelect={setSelectedObjectIndex}
+                                                onToggleVisibility={handleToggleVisibility}
+                                                onDelete={handleDelete}
+                                            />
+                                        ) : (
+                                            <PanelGroup direction="horizontal">
+                                                <Panel defaultSize={40} minSize={30}>
+                                                    <PlanSelector />
+                                                </Panel>
+                                                <PanelResizeHandle className="w-0.5 bg-border" />
+                                                <Panel defaultSize={60} minSize={30}>
+                                                    <ActivityList />
+                                                </Panel>
+                                            </PanelGroup>
+                                        )}
+                                    </div>
+                                </div>
+                            </Panel>
 
-                        {/* Settings Panel */}
-                        <Panel defaultSize={40} minSize={20}>
-                            <SettingsPanel
+                            <PanelResizeHandle className="h-1 bg-border hover:bg-primary transition-colors" />
+
+                            {/* Bottom: Settings or Activity Settings */}
+                            <Panel defaultSize={40} minSize={20}>
+                                {activeTab === 'scene' ? (
+                                    <SettingsPanel
+                                        options={rsf.options}
+                                        onChange={handleOptionsChange}
+                                    />
+                                ) : (
+                                    <ActivitySettings />
+                                )}
+                            </Panel>
+                        </PanelGroup>
+                    </Panel>
+
+                    <PanelResizeHandle className="w-1 bg-border hover:bg-primary transition-colors" />
+
+                    {/* Right - 3D Viewer */}
+                    <Panel defaultSize={80} minSize={60} className="bg-black">
+                        <div className="w-full h-full">
+                            <HoneycombPanel
+                                scene={scene}
                                 options={rsf.options}
-                                onChange={handleOptionsChange}
+                                stateHistory={rsf.stateHistory}
                             />
-                        </Panel>
-                    </PanelGroup>
-                </Panel>
-
-                <PanelResizeHandle className="w-1 bg-border hover:bg-primary transition-colors" />
-
-                {/* Right - 3D Viewer */}
-                <Panel defaultSize={80} minSize={60} className="bg-black">
-                    <div className="w-full h-full">
-                        <HoneycombPanel
-                            scene={scene}
-                            options={rsf.options}
-                            stateHistory={rsf.stateHistory}
-                        />
-                    </div>
-                </Panel>
-            </PanelGroup>
-        </div>
+                        </div>
+                    </Panel>
+                </PanelGroup>
+            </div>
+        </PlanProvider>
     );
 }

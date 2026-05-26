@@ -6,6 +6,8 @@ import { detectRSFVersion, migrateToRSF2 } from '../common/migration';
 import { vscode, resolveProtocolUri, isProtocolUri } from './vscodeApi';
 import { VscodeLayout } from './components/VscodeLayout';
 import { ensureSceneObjectIds } from './lib/sceneUtils';
+import { PluginProvider } from './plugins/PluginContext';
+import { pluginManager } from './plugins/PluginManager';
 import './globals.css';
 
 const builtinFetch = window.fetch;
@@ -28,6 +30,7 @@ window.fetch = async (input, init) => {
 function VscodeHoneycomb() {
     const [rsf, setRsf] = useState<RSF>();
     const [error, setError] = useState<string>();
+    const [pluginsLoaded, setPluginsLoaded] = useState(false);
     const [migrationPrompt, setMigrationPrompt] = useState<{
         version: string;
         originalRsf: any;
@@ -42,6 +45,37 @@ function VscodeHoneycomb() {
             content: JSON.stringify(updatedRsf, null, 2)
         });
     }, []);
+
+    // Load plugins when RSF changes
+    useEffect(() => {
+        if (!rsf || !rsf.plugins || rsf.plugins.length === 0) {
+            setPluginsLoaded(true);
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadPlugins = async () => {
+            try {
+                console.log('[VscodeHoneycomb] Loading plugins:', rsf.plugins);
+                await pluginManager.loadPlugins(rsf.plugins!);
+                if (!cancelled) {
+                    setPluginsLoaded(true);
+                }
+            } catch (error) {
+                console.error('[VscodeHoneycomb] Failed to load plugins:', error);
+                if (!cancelled) {
+                    setPluginsLoaded(true); // Continue even if plugins fail
+                }
+            }
+        };
+
+        loadPlugins();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [rsf]);
 
     const handleMigrate = useCallback(() => {
         if (!migrationPrompt) return;
@@ -216,7 +250,7 @@ function VscodeHoneycomb() {
         );
     }
 
-    if (!rsf) {
+    if (!rsf || !pluginsLoaded) {
         return (
             <div style={{ padding: '20px', color: 'white', backgroundColor: '#1e1e1e' }}>
                 <h2>Loading...</h2>
@@ -225,7 +259,9 @@ function VscodeHoneycomb() {
     }
 
     return (
-        <VscodeLayout rsf={rsf} onUpdate={handleUpdate} />
+        <PluginProvider>
+            <VscodeLayout rsf={rsf} onUpdate={handleUpdate} />
+        </PluginProvider>
     )
 }
 

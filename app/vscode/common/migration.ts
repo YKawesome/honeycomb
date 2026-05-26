@@ -76,6 +76,8 @@ export interface RSF1 {
     // No version field in RSF 1.0
     options?: RSF1Options;
     scene?: RSF1SceneObjectBase[];
+    plans?: any[]; // Plans from old format (if any)
+    plugins?: string[]; // Plugins (carried forward)
 }
 
 /**
@@ -278,6 +280,9 @@ export function migrateRSF1toRSF2(rsf1: RSF1): RSF {
         scene: migratedScene,
         // No state history in RSF 1.0
         stateHistory: undefined,
+        // Carry forward plans and plugins if present
+        plans: rsf1.plans,
+        plugins: rsf1.plugins,
     };
 }
 
