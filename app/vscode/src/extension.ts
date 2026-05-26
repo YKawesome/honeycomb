@@ -14,6 +14,10 @@ class HoneycombRsfProvider implements vscode.CustomTextEditorProvider {
         const rootPaths = getRootPaths();
         const localResourceRoots: vscode.Uri[] = [this.extensionPath];
 
+        // Add RSF file directory to allow loading relative assets
+        const rsfDir = path.dirname(document.uri.fsPath);
+        localResourceRoots.push(vscode.Uri.file(rsfDir));
+
         for (const rootPath of rootPaths) {
             try {
                 let basePath = rootPath.path;
@@ -70,6 +74,20 @@ class HoneycombRsfProvider implements vscode.CustomTextEditorProvider {
                         });
                     }
                     break;
+                case 'resolveRelativePath':
+                    // Resolve relative path relative to the RSF file
+                    const rsfDir = path.dirname(document.uri.fsPath);
+                    const absolutePath = path.resolve(rsfDir, message.relativePath);
+                    const fileUri = vscode.Uri.file(absolutePath);
+                    const webviewUri = webviewPanel.webview.asWebviewUri(fileUri);
+                    webviewPanel.webview.postMessage({
+                        type: 'relativePathResolved',
+                        requestId: message.requestId,
+                        originalPath: message.relativePath,
+                        resolvedPath: absolutePath,
+                        webviewUri: webviewUri.toString()
+                    });
+                    break;
                 case 'getRootPaths':
                     webviewPanel.webview.postMessage({
                         type: 'rootPaths',
@@ -123,6 +141,10 @@ class HoneycombRsfProvider implements vscode.CustomTextEditorProvider {
             };
         });
 
+        // Get RSF directory webview URI for resolving relative paths
+        const rsfDirUri = vscode.Uri.file(rsfDir);
+        const rsfDirWebviewUri = webviewPanel.webview.asWebviewUri(rsfDirUri).toString();
+
         webviewPanel.webview.html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -133,6 +155,7 @@ class HoneycombRsfProvider implements vscode.CustomTextEditorProvider {
         window.vscodeExtensionPath = "${webviewPanel.webview.asWebviewUri(this.extensionPath)}";
         window.rsfContent = ${JSON.stringify(rsfContent)};
         window.vscodeRootPaths = ${JSON.stringify(resolvedRootPaths)};
+        window.rsfDocumentDir = ${JSON.stringify({ fsPath: rsfDir, webviewUri: rsfDirWebviewUri })};
     </script>
 </head>
 <body style="height: 100vh; width: 100vw; padding: 0;">

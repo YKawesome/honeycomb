@@ -8,6 +8,7 @@ import { VscodeLayout } from './components/VscodeLayout';
 import { ensureSceneObjectIds } from './lib/sceneUtils';
 import { PluginProvider } from './plugins/PluginContext';
 import { pluginManager } from './plugins/PluginManager';
+import builtinObjectSettingsPlugin from './plugins/builtin/object-settings';
 import './globals.css';
 
 const builtinFetch = window.fetch;
@@ -48,17 +49,21 @@ function VscodeHoneycomb() {
 
     // Load plugins when RSF changes
     useEffect(() => {
-        if (!rsf || !rsf.plugins || rsf.plugins.length === 0) {
-            setPluginsLoaded(true);
-            return;
-        }
-
         let cancelled = false;
 
         const loadPlugins = async () => {
             try {
-                console.log('[VscodeHoneycomb] Loading plugins:', rsf.plugins);
-                await pluginManager.loadPlugins(rsf.plugins!);
+                // Register builtin plugins (bundled, not dynamically loaded)
+                console.log('[VscodeHoneycomb] Registering builtin plugins');
+                const builtinContext = pluginManager.createPluginContext();
+                await builtinObjectSettingsPlugin.activate(builtinContext);
+
+                // Then load user plugins from RSF (dynamic imports)
+                if (rsf?.plugins && rsf.plugins.length > 0) {
+                    console.log('[VscodeHoneycomb] Loading user plugins:', rsf.plugins);
+                    await pluginManager.loadPlugins(rsf.plugins);
+                }
+
                 if (!cancelled) {
                     setPluginsLoaded(true);
                 }
@@ -70,7 +75,9 @@ function VscodeHoneycomb() {
             }
         };
 
-        loadPlugins();
+        if (rsf) {
+            loadPlugins();
+        }
 
         return () => {
             cancelled = true;

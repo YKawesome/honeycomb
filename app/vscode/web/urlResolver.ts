@@ -1,8 +1,8 @@
-import { resolveProtocolUri, isProtocolUri } from './vscodeApi';
+import { resolveProtocolUri, isProtocolUri, resolveRelativePath, isRelativePath } from './vscodeApi';
 
 /**
- * Resolves a URL, handling protocol URIs (e.g., package://...) by converting them
- * to webview-accessible URIs
+ * Resolves a URL, handling protocol URIs (e.g., package://...) and relative paths
+ * by converting them to webview-accessible URIs
  * @param url The URL to resolve
  * @returns The resolved webview-accessible URL
  */
@@ -14,6 +14,13 @@ export async function resolveUrl(url: string): Promise<string> {
         }
         throw new Error(`Failed to resolve protocol URI: ${url}`);
     }
+
+    // Handle relative paths (relative to RSF file)
+    if (isRelativePath(url)) {
+        const resolved = await resolveRelativePath(url);
+        return resolved.webviewUri;
+    }
+
     return url;
 }
 

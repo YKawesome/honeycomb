@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { pluginManager, PluginManager } from './PluginManager';
-import type { ActivityProvider, Tool, GlobalPanel } from '../../common/plugins';
+import type { ActivityProvider, Tool, GlobalPanel, PlanSettingsProvider, ObjectSettingsProvider } from '../../common/plugins';
 
 interface PluginContextValue {
     manager: PluginManager;
     activities: ActivityProvider[];
     tools: Tool[];
     panels: GlobalPanel[];
+    planSettingsProviders: PlanSettingsProvider[];
+    objectSettingsProviders: ObjectSettingsProvider[];
     activeTool: Tool | null;
     activateTool: (id: string) => void;
     deactivateTool: () => void;
@@ -30,6 +32,8 @@ export const PluginProvider: React.FC<PluginProviderProps> = ({ children }) => {
     const [activities, setActivities] = useState<ActivityProvider[]>([]);
     const [tools, setTools] = useState<Tool[]>([]);
     const [panels, setPanels] = useState<GlobalPanel[]>([]);
+    const [planSettingsProviders, setPlanSettingsProviders] = useState<PlanSettingsProvider[]>([]);
+    const [objectSettingsProviders, setObjectSettingsProviders] = useState<ObjectSettingsProvider[]>([]);
     const [activeTool, setActiveTool] = useState<Tool | null>(null);
 
     // Refresh registries when they change
@@ -37,6 +41,8 @@ export const PluginProvider: React.FC<PluginProviderProps> = ({ children }) => {
         setActivities(pluginManager.getActivities());
         setTools(pluginManager.getTools());
         setPanels(pluginManager.getPanels());
+        setPlanSettingsProviders(pluginManager.getPlanSettingsProviders());
+        setObjectSettingsProviders(pluginManager.getObjectSettingsProviders());
         setActiveTool(pluginManager.getActiveTool());
     };
 
@@ -60,6 +66,8 @@ export const PluginProvider: React.FC<PluginProviderProps> = ({ children }) => {
         activities,
         tools,
         panels,
+        planSettingsProviders,
+        objectSettingsProviders,
         activeTool,
         activateTool: handleActivateTool,
         deactivateTool: handleDeactivateTool,

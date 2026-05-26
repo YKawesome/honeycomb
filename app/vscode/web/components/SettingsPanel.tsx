@@ -1,21 +1,44 @@
 import React from 'react';
-import { SceneOptions } from '@gov.nasa.jpl.honeycomb/core';
+import { Object3D } from 'three';
+import { SceneOptions, Viewer } from '@gov.nasa.jpl.honeycomb/core';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { ScrollArea } from './ui/scroll-area';
 import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { ObjectSettings } from './ObjectSettings';
 
 interface SettingsPanelProps {
     options: Partial<SceneOptions>;
     onChange: (options: Partial<SceneOptions>) => void;
+    selectedThreeObject?: Object3D | null;
+    selectedRsfObject?: any | null;
+    onRsfObjectChange?: (updates: any) => void;
+    viewer?: Viewer;
 }
 
-export function SettingsPanel({ options, onChange }: SettingsPanelProps) {
+export function SettingsPanel({
+    options,
+    onChange,
+    selectedThreeObject,
+    selectedRsfObject,
+    onRsfObjectChange,
+    viewer
+}: SettingsPanelProps) {
     const handleChange = (key: keyof SceneOptions, value: any) => {
         onChange({ ...options, [key]: value });
     };
+
+    // If an object is selected and we have a viewer, show object settings
+    if (selectedThreeObject && selectedRsfObject && viewer) {
+        return <ObjectSettings
+            object={selectedThreeObject}
+            rsfObject={selectedRsfObject}
+            viewer={viewer}
+            onRsfChange={onRsfObjectChange}
+        />;
+    }
 
     return (
         <div className="flex flex-col h-full border-r">

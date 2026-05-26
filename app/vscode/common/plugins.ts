@@ -68,6 +68,76 @@ export interface ActivitySettingsProps<S = any> {
 }
 
 /**
+ * Props passed to plan settings component
+ */
+export interface PlanSettingsProps<G = any> {
+    plan: Plan;
+    onChange: (globals: G) => void;
+}
+
+/**
+ * Plan settings provider - defines global plan-level settings
+ */
+export interface PlanSettingsProvider<G = any> {
+    /** Provider identifier */
+    id: string;
+
+    /** Display name */
+    name: string;
+
+    /** Description */
+    description?: string;
+
+    /**
+     * React component for settings UI
+     */
+    SettingsComponent: FC<PlanSettingsProps<G>>;
+
+    /**
+     * Get default globals for a new plan
+     */
+    getDefaultGlobals(): G;
+}
+
+/**
+ * Props passed to object settings component
+ */
+export interface ObjectSettingsProps {
+    /** Three.js Object3D for runtime manipulation */
+    object: Object3D;
+    /** The RSF SceneObject definition with channels */
+    rsfObject: any; // SceneObject from RSF
+    /** Viewer instance */
+    viewer: Viewer;
+    /** Called when RSF channels are modified */
+    onRsfChange?: (updates: any) => void;
+}
+
+/**
+ * Object settings provider - defines settings panes for specific object types
+ */
+export interface ObjectSettingsProvider {
+    /** Provider identifier */
+    id: string;
+
+    /** Display name shown in tab */
+    name: string;
+
+    /** Icon name (lucide-react) */
+    icon?: string;
+
+    /**
+     * Check if this provider can handle the given object
+     */
+    canHandle(object: Object3D): boolean;
+
+    /**
+     * React component for settings UI
+     */
+    SettingsComponent: FC<ObjectSettingsProps>;
+}
+
+/**
  * Activity provider - defines an activity type
  * Follows Grafana pattern: builder API for data, React for UI
  */
@@ -158,6 +228,12 @@ export interface PluginContext {
 
     /** Register a global UI panel */
     registerPanel(panel: GlobalPanel): void;
+
+    /** Register plan-level settings */
+    registerPlanSettings<G = any>(provider: PlanSettingsProvider<G>): void;
+
+    /** Register object-specific settings */
+    registerObjectSettings(provider: ObjectSettingsProvider): void;
 }
 
 /**

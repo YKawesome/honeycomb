@@ -19,7 +19,7 @@ import {
     ViewCubeViewerMixin
 } from "@gov.nasa.jpl.honeycomb/scene-viewers";
 
-import { resolveProtocolUriSync, isProtocolUri } from './vscodeApi';
+import { resolveProtocolUriSync, isProtocolUri, resolveRelativePathSync, isRelativePath } from './vscodeApi';
 import { applyOptionsToViewer } from './applyOptions';
 import { VscodeKinematicsAnimator } from './VscodeKinematicsAnimator';
 import { StateSnapshot } from '../common/rsf';
@@ -41,12 +41,25 @@ export const App: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     useEffect(() => {
         const manager = new LoadingManager();
 
-        // Set up URL modifier to synchronously resolve protocol URIs
+        // Set up URL modifier to synchronously resolve protocol URIs and relative paths
         manager.setURLModifier((url: string) => {
+            console.log('[URLModifier] Input URL:', url);
+
+            // Handle protocol URIs (e.g., package://...)
             if (isProtocolUri(url)) {
                 const resolved = resolveProtocolUriSync(url);
+                console.log('[URLModifier] Protocol URI resolved:', url, '->', resolved);
                 return resolved;
             }
+
+            // Handle relative paths - resolve relative to RSF file
+            if (isRelativePath(url)) {
+                const resolved = resolveRelativePathSync(url);
+                console.log('[URLModifier] Relative path resolved:', url, '->', resolved);
+                return resolved;
+            }
+
+            console.log('[URLModifier] URL unchanged:', url);
             return url;
         });
 
@@ -85,6 +98,7 @@ interface HoneycombProps {
 
 interface HoneycombInnerProps extends HoneycombProps {
     containerRef: Element;
+    onViewerReady?: (viewer: VscodeHoneycombViewer) => void;
 }
 
 const EmptyPlayerBar: React.FC<VideoPlayerBarProps> = () => {
@@ -211,8 +225,16 @@ const HoneycombInner: React.FC<HoneycombInnerProps> = ({
     options,
     scene,
     stateHistory,
+    onViewerReady,
 }) => {
     const { viewer } = useHoneycomb<VscodeHoneycombViewer>();
+
+    // Notify parent when viewer is ready
+    useEffect(() => {
+        if (viewer && onViewerReady) {
+            onViewerReady(viewer);
+        }
+    }, [viewer, onViewerReady]);
 
     useEffect(() => {
         // Apply scene options to viewer
@@ -252,9 +274,10 @@ const HoneycombInner: React.FC<HoneycombInnerProps> = ({
 };
 
 interface HoneycombPanelProps extends HoneycombProps {
+    onViewerReady?: (viewer: VscodeHoneycombViewer) => void;
 }
 
-export const HoneycombPanel: React.FC<HoneycombPanelProps> = ({ scene, options, stateHistory }) => {
+export const HoneycombPanel: React.FC<HoneycombPanelProps> = ({ scene, options, stateHistory, onViewerReady }) => {
     const [containerRef, setContainerRef] = useState<Element | null>(null);
 
     return (
@@ -274,6 +297,7 @@ export const HoneycombPanel: React.FC<HoneycombPanelProps> = ({ scene, options, 
                         options={options}
                         stateHistory={stateHistory}
                         containerRef={containerRef}
+                        onViewerReady={onViewerReady}
                     />
                 )}
             </App>

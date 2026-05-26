@@ -53,6 +53,13 @@ export const ObjectLoader: React.FC<ObjectLoaderProps> = ({
         setError
     }), [obj3d]);
 
+    // Set the name on the Three.js object
+    useEffect(() => {
+        if (obj3d) {
+            obj3d.name = name;
+        }
+    }, [obj3d, name]);
+
     // Add the obj3d to the scene
     useEffect(() => {
         if (obj3d) {

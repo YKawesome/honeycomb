@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Plan, Activity, RSF } from '../../../common/rsf';
+import { usePlugins } from '../../plugins/PluginContext';
 
 interface PlanContextValue {
     plans: Plan[];
@@ -43,6 +44,7 @@ export const PlanProvider: React.FC<PlanProviderProps> = ({
     onUpdate,
     children,
 }) => {
+    const { planSettingsProviders } = usePlugins();
     const [plans, setPlans] = useState<Plan[]>(initialPlans);
     const [activePlanId, setActivePlanId] = useState<string | null>(
         initialPlans.length > 0 ? initialPlans[0].uuid : null
@@ -67,6 +69,12 @@ export const PlanProvider: React.FC<PlanProviderProps> = ({
     }, []);
 
     const createPlan = useCallback((name: string) => {
+        // Initialize plan globals from all registered providers
+        const globals: Record<string, any> = {};
+        for (const provider of planSettingsProviders) {
+            globals[provider.id] = provider.getDefaultGlobals();
+        }
+
         const newPlan: Plan = {
             uuid: uuidv4(),
             name,
@@ -75,12 +83,13 @@ export const PlanProvider: React.FC<PlanProviderProps> = ({
                 state: {},
             },
             activities: [],
+            globals,
         };
 
         const updatedPlans = [...plans, newPlan];
         notifyUpdate(updatedPlans);
         setActivePlanId(newPlan.uuid);
-    }, [plans, notifyUpdate]);
+    }, [plans, planSettingsProviders, notifyUpdate]);
 
     const deletePlan = useCallback((planId: string) => {
         const updatedPlans = plans.filter(p => p.uuid !== planId);

@@ -6,6 +6,8 @@ import type {
     ActivityProvider,
     Tool,
     GlobalPanel,
+    PlanSettingsProvider,
+    ObjectSettingsProvider,
 } from '../../common/plugins';
 
 /**
@@ -17,6 +19,8 @@ export class PluginManager {
     private activities: Map<string, ActivityProvider> = new Map();
     private tools: Map<string, Tool> = new Map();
     private panels: Map<string, GlobalPanel> = new Map();
+    private planSettings: Map<string, PlanSettingsProvider> = new Map();
+    private objectSettings: Map<string, ObjectSettingsProvider> = new Map();
     private activeTool: Tool | null = null;
     private viewer: Viewer | null = null;
 
@@ -27,6 +31,59 @@ export class PluginManager {
     }
 
     /**
+     * Create a plugin context for registering activities, tools, panels, etc.
+     * Used both internally and for builtin plugins
+     */
+    createPluginContext(): PluginContext {
+        return {
+            registerActivity: (provider) => {
+                if (this.activities.has(provider.type)) {
+                    console.warn(`Activity type "${provider.type}" is already registered`);
+                    return;
+                }
+                console.log(`Registered activity: ${provider.type}`);
+                this.activities.set(provider.type, provider);
+            },
+
+            registerTool: (tool) => {
+                if (this.tools.has(tool.id)) {
+                    console.warn(`Tool "${tool.id}" is already registered`);
+                    return;
+                }
+                console.log(`Registered tool: ${tool.id}`);
+                this.tools.set(tool.id, tool);
+            },
+
+            registerPanel: (panel) => {
+                if (this.panels.has(panel.id)) {
+                    console.warn(`Panel "${panel.id}" is already registered`);
+                    return;
+                }
+                console.log(`Registered panel: ${panel.id}`);
+                this.panels.set(panel.id, panel);
+            },
+
+            registerPlanSettings: (provider) => {
+                if (this.planSettings.has(provider.id)) {
+                    console.warn(`Plan settings "${provider.id}" is already registered`);
+                    return;
+                }
+                console.log(`Registered plan settings: ${provider.id}`);
+                this.planSettings.set(provider.id, provider);
+            },
+
+            registerObjectSettings: (provider) => {
+                if (this.objectSettings.has(provider.id)) {
+                    console.warn(`Object settings "${provider.id}" is already registered`);
+                    return;
+                }
+                console.log(`Registered object settings: ${provider.id}`);
+                this.objectSettings.set(provider.id, provider);
+            },
+        };
+    }
+
+    /**
      * Load a plugin from a URL or path
      */
     async loadPlugin(url: string): Promise<void> {
@@ -34,7 +91,7 @@ export class PluginManager {
             console.log(`Loading plugin: ${url}`);
 
             // Dynamic import - works with both URLs and local paths
-            const module: PluginModule = await import(/* @vite-ignore */ url);
+            const module: PluginModule = await import(/* webpackIgnore: true */ url);
 
             if (!module.default) {
                 throw new Error(`Plugin at ${url} does not have a default export`);
@@ -43,34 +100,7 @@ export class PluginManager {
             const plugin = module.default;
 
             // Create context for this plugin
-            const context: PluginContext = {
-                registerActivity: (provider) => {
-                    if (this.activities.has(provider.type)) {
-                        console.warn(`Activity type "${provider.type}" is already registered`);
-                        return;
-                    }
-                    console.log(`Registered activity: ${provider.type}`);
-                    this.activities.set(provider.type, provider);
-                },
-
-                registerTool: (tool) => {
-                    if (this.tools.has(tool.id)) {
-                        console.warn(`Tool "${tool.id}" is already registered`);
-                        return;
-                    }
-                    console.log(`Registered tool: ${tool.id}`);
-                    this.tools.set(tool.id, tool);
-                },
-
-                registerPanel: (panel) => {
-                    if (this.panels.has(panel.id)) {
-                        console.warn(`Panel "${panel.id}" is already registered`);
-                        return;
-                    }
-                    console.log(`Registered panel: ${panel.id}`);
-                    this.panels.set(panel.id, panel);
-                },
-            };
+            const context = this.createPluginContext();
 
             // Activate the plugin
             await plugin.activate(context);
@@ -177,6 +207,34 @@ export class PluginManager {
     }
 
     /**
+     * Get all registered plan settings providers
+     */
+    getPlanSettingsProviders(): PlanSettingsProvider[] {
+        return Array.from(this.planSettings.values());
+    }
+
+    /**
+     * Get plan settings provider by ID
+     */
+    getPlanSettingsProvider(id: string): PlanSettingsProvider | undefined {
+        return this.planSettings.get(id);
+    }
+
+    /**
+     * Get all registered object settings providers
+     */
+    getObjectSettingsProviders(): ObjectSettingsProvider[] {
+        return Array.from(this.objectSettings.values());
+    }
+
+    /**
+     * Get object settings provider by ID
+     */
+    getObjectSettingsProvider(id: string): ObjectSettingsProvider | undefined {
+        return this.objectSettings.get(id);
+    }
+
+    /**
      * Cleanup all plugins
      */
     async dispose(): Promise<void> {
@@ -196,6 +254,8 @@ export class PluginManager {
         this.activities.clear();
         this.tools.clear();
         this.panels.clear();
+        this.planSettings.clear();
+        this.objectSettings.clear();
     }
 }
 

@@ -62,10 +62,11 @@ import type { HoneycombPlugin, PluginContext } from '@gov.nasa.jpl.honeycomb/vsc
 
 const plugin: HoneycombPlugin = {
     activate(context: PluginContext) {
-        // Register activities, tools, panels
+        // Register activities, tools, panels, plan settings
         context.registerActivity(myActivityProvider);
         context.registerTool(myTool);
         context.registerPanel(myPanel);
+        context.registerPlanSettings(myPlanSettingsProvider);
     },
     
     deactivate() {
@@ -309,6 +310,121 @@ const statusPanel: GlobalPanel = {
 };
 ```
 
+### Example: Plan-Wide Settings
+
+Plan settings apply to all activities in a plan:
+
+```typescript
+import type { PlanSettingsProvider, PlanSettingsProps } from '@gov.nasa.jpl.honeycomb/vscode-common/plugins';
+
+// Plan-wide configuration
+interface DriveSettings {
+    maxSpeed: number;
+    safetyRadius: number;
+    avoidanceEnabled: boolean;
+}
+
+// React settings component
+const DriveSettingsComponent: React.FC<PlanSettingsProps<DriveSettings>> = ({
+    plan,
+    onChange
+}) => {
+    const settings = plan.globals?.driveSettings || {
+        maxSpeed: 1.0,
+        safetyRadius: 0.5,
+        avoidanceEnabled: true
+    };
+
+    return (
+        <div className="space-y-3">
+            <div>
+                <label className="text-xs font-medium">Max Speed (m/s)</label>
+                <input
+                    type="number"
+                    value={settings.maxSpeed}
+                    onChange={(e) => onChange({
+                        ...settings,
+                        maxSpeed: parseFloat(e.target.value)
+                    })}
+                    className="w-full mt-1 px-2 py-1 text-sm border rounded"
+                    step="0.1"
+                    min="0"
+                />
+            </div>
+            <div>
+                <label className="text-xs font-medium">Safety Radius (m)</label>
+                <input
+                    type="number"
+                    value={settings.safetyRadius}
+                    onChange={(e) => onChange({
+                        ...settings,
+                        safetyRadius: parseFloat(e.target.value)
+                    })}
+                    className="w-full mt-1 px-2 py-1 text-sm border rounded"
+                    step="0.1"
+                    min="0"
+                />
+            </div>
+            <div className="flex items-center gap-2">
+                <input
+                    type="checkbox"
+                    id="avoidance"
+                    checked={settings.avoidanceEnabled}
+                    onChange={(e) => onChange({
+                        ...settings,
+                        avoidanceEnabled: e.target.checked
+                    })}
+                    className="rounded"
+                />
+                <label htmlFor="avoidance" className="text-xs font-medium">
+                    Obstacle Avoidance
+                </label>
+            </div>
+        </div>
+    );
+};
+
+// Plan settings provider
+const driveSettingsProvider: PlanSettingsProvider<DriveSettings> = {
+    id: 'driveSettings',
+    name: 'Drive Settings',
+    description: 'Configure drive behavior for all waypoint activities',
+    SettingsComponent: DriveSettingsComponent,
+    getDefaultGlobals() {
+        return {
+            maxSpeed: 1.0,
+            safetyRadius: 0.5,
+            avoidanceEnabled: true
+        };
+    }
+};
+
+// Plugin registration
+const plugin: HoneycombPlugin = {
+    activate(context) {
+        context.registerPlanSettings(driveSettingsProvider);
+    }
+};
+
+export default plugin;
+```
+
+Activities can access plan globals:
+
+```typescript
+update(initialState, activity, plan, visualState) {
+    // Access plan-wide settings
+    const driveSettings = plan.globals?.driveSettings;
+    if (driveSettings?.avoidanceEnabled) {
+        // Apply obstacle avoidance
+    }
+    
+    // Use maxSpeed for visualization
+    const speed = driveSettings?.maxSpeed || 1.0;
+    // ...
+}
+```
+
 ## Loading Plugins
 
 ### In RSF File
@@ -380,6 +496,16 @@ Plugins are loaded via dynamic import when RSF opens:
 - `id: string` - Unique panel identifier
 - `Component: FC` - React component to render
 - `placement?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'`
+
+### PlanSettingsProvider<G>
+
+- `id: string` - Unique provider identifier (used to namespace globals)
+- `name: string` - Display name
+- `description?: string` - Description shown in UI
+- `SettingsComponent: FC<PlanSettingsProps<G>>` - React settings component
+- `getDefaultGlobals()` - Generate default globals for new plans
+
+**Note**: Plan globals are stored as `plan.globals[providerId]` - each provider gets its own namespace to avoid collisions.
 
 ## Best Practices
 

@@ -88,6 +88,53 @@ export async function getRootPaths(): Promise<Array<{ name: string; path: string
 }
 
 /**
+ * Resolves a relative path (relative to the RSF file) to a webview-accessible URI
+ * @param relativePath The relative path to resolve (e.g., "./models/rover.glb")
+ * @returns Object containing the resolved file path and webview URI
+ */
+export async function resolveRelativePath(relativePath: string): Promise<{
+    originalPath: string;
+    resolvedPath: string;
+    webviewUri: string;
+}> {
+    const requestId = `resolve-relative-${requestCounter++}`;
+
+    return new Promise((resolve, reject) => {
+        pendingRequests.set(requestId, { resolve, reject });
+
+        vscode.postMessage({
+            type: 'resolveRelativePath',
+            requestId,
+            relativePath
+        });
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+            if (pendingRequests.has(requestId)) {
+                pendingRequests.delete(requestId);
+                reject(new Error(`Timeout resolving relative path: ${relativePath}`));
+            }
+        }, 5000);
+    });
+}
+
+/**
+ * Checks if a path is a relative path (not absolute, not a URL)
+ */
+export function isRelativePath(path: string): boolean {
+    // Check if it's a URL with a protocol (including blob:, data:, etc.)
+    if (path.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) {
+        return false;
+    }
+    // Check if it's an absolute path (starts with / or drive letter on Windows)
+    if (path.match(/^([a-zA-Z]:)?[/\\]/)) {
+        return false;
+    }
+    // It's a relative path
+    return true;
+}
+
+/**
  * Checks if a URI uses a custom protocol format (e.g., "package://", "cadre://")
  * Excludes standard web protocols (http, https, file, data, blob, etc.)
  */
@@ -110,6 +157,11 @@ interface RootPathInfo {
     protocol: string;
     basePath: string;
     baseWebviewUri: string;
+}
+
+interface RsfDocumentDir {
+    fsPath: string;
+    webviewUri: string;
 }
 
 /**
@@ -145,5 +197,38 @@ export function resolveProtocolUriSync(uri: string): string {
     // Construct webview URI by joining base webview URI with relative path
     // The baseWebviewUri already points to the directory, so we just need to append the relative path
     const resolved = `${rootPath.baseWebviewUri}/${relativePath}`;
+    return resolved;
+}
+
+/**
+ * Synchronously resolves a relative path to a webview URI using RSF document directory
+ * @param relativePath Path relative to the RSF file (e.g., "./models/rover.glb")
+ * @returns Webview-accessible URI
+ */
+export function resolveRelativePathSync(relativePath: string): string {
+    if (!isRelativePath(relativePath)) {
+        return relativePath;
+    }
+
+    // Get RSF document directory from global variable set by extension
+    const rsfDocDir = (window as any).rsfDocumentDir as RsfDocumentDir | undefined;
+    if (!rsfDocDir) {
+        console.error('[resolveRelativePathSync] rsfDocumentDir not available');
+        return relativePath;
+    }
+
+    // Normalize the relative path (remove ./ prefix if present)
+    let normalizedPath = relativePath;
+    if (normalizedPath.startsWith('./')) {
+        normalizedPath = normalizedPath.substring(2);
+    } else if (normalizedPath.startsWith('../')) {
+        // Handle parent directory references
+        // For now, just warn and return as-is since we can't easily resolve these without a full path library
+        console.warn('[resolveRelativePathSync] Parent directory references (..) not yet supported:', relativePath);
+        return relativePath;
+    }
+
+    // Construct webview URI by joining RSF directory webview URI with relative path
+    const resolved = `${rsfDocDir.webviewUri}/${normalizedPath}`;
     return resolved;
 }
