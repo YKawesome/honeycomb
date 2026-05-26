@@ -47,19 +47,17 @@ export function ObjectSettings({ object, rsfObject, viewer, onRsfChange }: Objec
             {applicableProviders.length === 1 ? (
                 // Single provider - no tabs needed
                 <ScrollArea className="flex-1">
-                    <div className="p-3">
-                        {React.createElement(applicableProviders[0].SettingsComponent, {
-                            object,
-                            rsfObject,
-                            viewer,
-                            onRsfChange,
-                        })}
-                    </div>
+                    {React.createElement(applicableProviders[0].SettingsComponent, {
+                        object,
+                        rsfObject,
+                        viewer,
+                        onRsfChange,
+                    })}
                 </ScrollArea>
             ) : (
                 // Multiple providers - show tabs
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                    <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+                    <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 shrink-0">
                         {applicableProviders.map(provider => {
                             const Icon = provider.icon
                                 ? (LucideIcons as any)[provider.icon]
@@ -78,18 +76,18 @@ export function ObjectSettings({ object, rsfObject, viewer, onRsfChange }: Objec
                         })}
                     </TabsList>
 
-                    <ScrollArea className="flex-1">
-                        {applicableProviders.map(provider => (
-                            <TabsContent key={provider.id} value={provider.id} className="m-0 p-3">
+                    {applicableProviders.map(provider => (
+                        <TabsContent key={provider.id} value={provider.id} className="m-0 flex-1 overflow-hidden">
+                            <ScrollArea className="h-full">
                                 {React.createElement(provider.SettingsComponent, {
                                     object,
                                     rsfObject,
                                     viewer,
                                     onRsfChange,
                                 })}
-                            </TabsContent>
-                        ))}
-                    </ScrollArea>
+                            </ScrollArea>
+                        </TabsContent>
+                    ))}
                 </Tabs>
             )}
         </div>

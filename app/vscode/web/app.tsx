@@ -43,23 +43,16 @@ export const App: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
 
         // Set up URL modifier to synchronously resolve protocol URIs and relative paths
         manager.setURLModifier((url: string) => {
-            console.log('[URLModifier] Input URL:', url);
-
             // Handle protocol URIs (e.g., package://...)
             if (isProtocolUri(url)) {
-                const resolved = resolveProtocolUriSync(url);
-                console.log('[URLModifier] Protocol URI resolved:', url, '->', resolved);
-                return resolved;
+                return resolveProtocolUriSync(url);
             }
 
             // Handle relative paths - resolve relative to RSF file
             if (isRelativePath(url)) {
-                const resolved = resolveRelativePathSync(url);
-                console.log('[URLModifier] Relative path resolved:', url, '->', resolved);
-                return resolved;
+                return resolveRelativePathSync(url);
             }
 
-            console.log('[URLModifier] URL unchanged:', url);
             return url;
         });
 

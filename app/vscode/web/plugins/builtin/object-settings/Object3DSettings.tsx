@@ -151,7 +151,7 @@ function ObjectSettingsComponent({ object, rsfObject, onRsfChange }: ObjectSetti
     const showW = orientationConvention !== 'rpy';
 
     return (
-        <div className="space-y-4">
+        <div className="p-3 space-y-4">
             {/* Name */}
             <div className="space-y-2">
                 <Label htmlFor="object-name" className="text-xs font-medium">

@@ -89,7 +89,7 @@ function TerrainSettingsComponent({ object, viewer, onChange }: ObjectSettingsPr
     };
 
     return (
-        <div className="space-y-4">
+        <div className="p-3 space-y-4">
             {/* Rendering Mode */}
             <div className="space-y-2">
                 <Label htmlFor="rendering-mode" className="text-xs font-medium">

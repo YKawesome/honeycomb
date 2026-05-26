@@ -1,6 +1,7 @@
 import type { HoneycombPlugin, PluginContext } from '../../../../common/plugins';
 import { Object3DSettingsProvider } from './Object3DSettings';
 import { TerrainSettingsProvider } from './TerrainSettings';
+import { RobotSettingsProvider } from './RobotSettings';
 
 /**
  * Builtin plugin that registers core object settings panes
@@ -12,6 +13,9 @@ const plugin: HoneycombPlugin = {
 
         // Register terrain-specific settings
         context.registerObjectSettings(TerrainSettingsProvider);
+
+        // Register robot joint settings
+        context.registerObjectSettings(RobotSettingsProvider);
 
         console.log('Builtin object settings plugin activated');
     },
