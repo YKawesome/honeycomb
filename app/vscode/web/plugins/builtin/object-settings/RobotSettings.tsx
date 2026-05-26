@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Object3D } from 'three';
 import type { ObjectSettingsProvider, ObjectSettingsProps } from '../../../../common/plugins';
-import type { KinematicChannel, Viewer } from '@gov.nasa.jpl.honeycomb/core';
+import type { KinematicChannel } from '@gov.nasa.jpl.honeycomb/core';
 import { Label } from '../../../components/ui/label';
 import { Input } from '../../../components/ui/input';
 import { Checkbox } from '../../../components/ui/checkbox';
@@ -55,8 +55,8 @@ function JointEditor({ jointName, urdfJoint, viewer, channel, onChange }: JointE
     // Check if joint has valid limits
     const shouldIgnoreLimits = urdfJoint.ignoreLimits || urdfJoint.limit.lower >= urdfJoint.limit.upper;
     const hasLimits = !shouldIgnoreLimits &&
-                      urdfJoint.limit.lower > -EFFECTIVELY_INFINITE_LIMIT &&
-                      urdfJoint.limit.upper < EFFECTIVELY_INFINITE_LIMIT;
+        urdfJoint.limit.lower > -EFFECTIVELY_INFINITE_LIMIT &&
+        urdfJoint.limit.upper < EFFECTIVELY_INFINITE_LIMIT;
 
     const handleToggleAnimated = useCallback((checked: boolean) => {
         onChange({
