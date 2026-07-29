@@ -60,3 +60,17 @@ jobs:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
               run: |
                   npx lerna publish from-package --yes
+
+            - name: Build and package Grafana plugin
+              run: |
+                  cd app/grafana
+                  yarn build
+                  yarn package
+
+            - name: Upload Grafana plugin zip to release
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  gh release upload "${{ steps.tag.outputs.tag }}" \
+                    app/grafana/jpl-honeycomb-panel.zip \
+                    --clobber
