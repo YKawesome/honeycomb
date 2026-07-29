@@ -61,6 +61,22 @@ jobs:
               run: |
                   npx lerna publish from-package --yes
 
+    grafana:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22.x"
+
+            - name: Install Dependencies
+              run: yarn install
+
             - name: Build and package Grafana plugin
               run: |
                   cd app/grafana
@@ -71,6 +87,6 @@ jobs:
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  gh release upload "${{ steps.tag.outputs.tag }}" \
+                  gh release upload "${GITHUB_REF##*/}" \
                     app/grafana/jpl-honeycomb-panel.zip \
                     --clobber
